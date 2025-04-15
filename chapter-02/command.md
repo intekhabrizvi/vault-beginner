@@ -5,7 +5,9 @@
 ```
 docker run -d --rm \
   -p 8200:8200 \
-  -v $(pwd)/vault-config.hcl:/vault/config/vault-config.hcl \
+  -v $(pwd)/../vault-data/config:/vault/config \
+  -v $(pwd)/../vault-data/file:/vault/file \
+  -v $(pwd)/../vault-data/logs:/vault/logs \
   --cap-add=IPC_LOCK \
   --name vault-dev \
     hashicorp/vault:latest server
