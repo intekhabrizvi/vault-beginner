@@ -7,9 +7,10 @@
 ```
 docker run -d --rm \
   -p 8200:8200 \
-  -v $(pwd)/../vault-data/config:/vault/config \
-  -v $(pwd)/../vault-data/file:/vault/file \
-  -v $(pwd)/../vault-data/logs:/vault/logs \
+  -v $(pwd)/vault-data/config:/vault/config \
+  -v $(pwd)/vault-data/file:/vault/file \
+  -v $(pwd)/vault-data/logs:/vault/logs \
+  -v $(pwd):/home/vault/vault-beginner \
   --cap-add=IPC_LOCK \
   --name vault-dev \
     hashicorp/vault:latest server
@@ -26,7 +27,7 @@ docker exec -it vault-dev /bin/sh
 export VAULT_ADDR=http://localhost:8200
 ```
 
-## Chapter 4 Specific Commands
+## Chapter Specific Commands
 
 
 ### Vault init using PGP keys

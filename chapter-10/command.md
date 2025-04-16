@@ -1,4 +1,4 @@
-# Chapter 5: Storing Your First Secret
+# Chapter 10: Policies in action
 
 ## Starting Vault and attaching to the container
 
@@ -34,29 +34,37 @@ export VAULT_ADDR=http://localhost:8200
 vault login <your-root-token>
 ```
 
-### Enabling the KV Secrets Engine
+### Apply kv1-reader Policy
 ```
-vault secrets enable -path=secret kv
-```
-
-### Storing a Secret (KV Put)
-```
-vault kv put secret/myapp username=admin password="S3cr3t!"
+vault policy write kv1-reader chapter-09/kv1-reader.hcl
 ```
 
-### Retrieving a Secret (KV Get)
+### Apply kv2-reader Policy
 ```
-vault kv get secret/myapp
-```
-
-### Retrieving a Secret (KV Get) JSON Format
-```
-vault kv get -format=json secret/myapp
+vault policy write kv2-reader chapter-09/kv2-reader.hcl
 ```
 
-### Deleting a Secret (KV Delete)
+### Assign Policy to Alice
 ```
-vault kv delete secret/myapp
+vault write auth/userpass/users/alice \
+  password="123456" \
+  policies="kv1-reader,kv2-reader"
+```
+
+### Verify policy assigned to Alice
+```
+vault read auth/userpass/users/alice
+```
+
+### Login as Alice
+```
+vault login -method=userpass username=alice password=123456
+```
+
+### Writing on Kv-v2 engine
+
+```
+vault kv put kvv2/project1/api key=newvalue789
 ```
 
 ### Stop the vault 
