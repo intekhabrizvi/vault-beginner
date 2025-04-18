@@ -1,0 +1,30 @@
+services:
+  vault-dev:
+    image: hashicorp/vault:latest
+    container_name: vault-dev
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    volumes:
+      - ../vault-data/config:/vault/config
+      - ../vault-data/file:/vault/file
+      - ../vault-data/logs:/vault/logs
+      - ../:/home/vault/vault-beginner
+    cap_add:
+      - IPC_LOCK
+    command: "server"
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: vaultdb
+    ports:
+      - "5432:5432"
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "8080:8080"
