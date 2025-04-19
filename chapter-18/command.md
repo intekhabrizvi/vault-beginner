@@ -2,7 +2,7 @@
 
 ## Starting Vault and attaching to the container
 
-### To start the vault stack
+### To start the vault container
 ```
 docker run -d --rm \
   -p 8200:8200 \
