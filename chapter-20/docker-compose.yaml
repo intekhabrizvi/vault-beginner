@@ -1,0 +1,39 @@
+services:
+  vault-dev:
+    image: hashicorp/vault:latest
+    container_name: vault-dev
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    volumes:
+      - ../vault-data/config:/vault/config
+      - ../vault-data/file:/vault/file
+      - ../vault-data/logs:/vault/logs
+      - ../:/home/vault/vault-beginner
+    cap_add:
+      - IPC_LOCK
+    command: "server"
+    networks:
+      - vault-net    
+
+  vault-agent:
+    image: hashicorp/vault:latest
+    container_name: vault-agent
+    environment:
+      VAULT_ADDR: "http://vault-dev:8200"
+    depends_on:
+      - vault-dev
+    volumes:
+      - ../vault-data/config:/vault/config
+      - ../vault-data/file:/vault/file
+      - ../vault-data/logs:/vault/logs
+      - ../:/home/vault/vault-beginner
+    entrypoint: >
+      vault agent -config=/home/vault/vault-beginner/chapter-20/vault-agent.hcl
+    networks:
+      - vault-net
+
+networks:
+  vault-net:
+    driver: bridge
