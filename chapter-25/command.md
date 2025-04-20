@@ -1,4 +1,4 @@
-# Chapter 22: Production deployment of Hashicorp Vault on Ubuntu LTS
+# Chapter 25: Production deployment of Hashicorp Vault on Ubuntu LTS
 
 ## Pre vault install
 

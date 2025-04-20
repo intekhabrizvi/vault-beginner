@@ -1,53 +1,60 @@
-# Chapter 26: Revoking and Regenerating the Root Token in Vault
+# Chapter 26: Vault Production Deployment Using Docker
 
-## Enable userpass Auth
-
+### Updating Ubuntu packages
 ```
-vault auth enable userpass
-```
-
-## Create an Admin Policy
-
-```
-vault policy write admin admin-policy.hcl
+sudo apt update
 ```
 
-## Create a Vault Admin User
-
+### Installing docker
 ```
-vault write auth/userpass/users/vaultadmin \
-  password="123456" \
-  policies="admin"
+sudo apt install -y docker.io; sudo systemctl enable docker;
 ```
 
-## Login with userpass
-
+### Creating vault directory for permanent saving of data
 ```
-vault login -method=userpass username=vaultadmin password=123456
-```
-
-## Begin Root Token Regeneration Process
-
-```
-vault operator generate-root -init
+mkdir -p /opt/vault-prod/config /opt/vault-prod/data /opt/vault-prod/logs
 ```
 
-## Cancel Root Token Regeneration Process
-
+### Change data directory ownership for docker
 ```
-vault operator generate-root -cancel
-```
-
-## Provide Unseal Key Shares (With Nonce)
-
-```
-vault operator generate-root -nonce=<nonce> <unseal_key>
+sudo chown -R 100:100 /opt/vault-prod/data
 ```
 
-## Decrypt the Root Token (Using OTP)
+### Create dierctory to hold SSL certificate
+```
+mkdir -p /opt/vault-prod/config/certs
+```
+
+### Command to generate self-sign SSL certificate
+```
+openssl req -x509 -nodes -newkey rsa:2048 \
+  -keyout /opt/vault-prod/config/certs/vault.key \
+  -out /opt/vault-prod/config/certs/vault.crt \
+  -days 365 \
+  -config vault.cnf
+```
+
+### Start vault container
 
 ```
-vault operator generate-root -decode <encoded_token> -otp <One-time-otp>
+docker run -d --name vault \
+  --cap-add=IPC_LOCK \
+  -p 8200:8200 \
+  -p 8201:8201 \
+  -v /opt/vault-prod/config:/vault/config \
+  -v /opt/vault-prod/data:/vault/data \
+  -v /opt/vault-prod/config/certs:/vault/config/certs \
+  -e VAULT_ADDR='https://0.0.0.0:8200' \
+  --restart=always \
+  hashicorp/vault:latest server
 ```
 
+### Initialize Hashicorp vault
+```
+docker exec -it vault vault operator init
+```
 
+### Unseal the vault
+```
+docker exec -it vault vault operator unseal <unseal-key>
+```
