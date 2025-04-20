@@ -1,0 +1,11 @@
+/vault/logs/audit.log {
+  daily
+  rotate 7
+  compress
+  missingok
+  notifempty
+  create 0640 vault vault
+  postrotate
+    systemctl kill -HUP vault
+  endscript
+}
