@@ -1,0 +1,22 @@
+[Unit]
+Description=HashiCorp Vault
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+User=vault
+Group=vault
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=yes
+Capabilities=CAP_IPC_LOCK
+CapabilityBoundingSet=CAP_IPC_LOCK
+ExecStart=/usr/bin/vault server -config=/etc/vault.d/vault.hcl
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+LimitMEMLOCK=infinity
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
