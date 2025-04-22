@@ -1,90 +1,60 @@
-# Chapter 25: Production deployment of Hashicorp Vault on Ubuntu LTS
-
-## Pre vault install
+# Chapter 25: Vault Production Deployment Using Docker
 
 ### Updating Ubuntu packages
 ```
-sudo apt update;
+sudo apt update
 ```
 
-### Install important packages before starting the install
+### Installing docker
 ```
-sudo apt install -y gnupg curl software-properties-common
-```
-
-### Get and install Hashicorp Vault PGP keys to verify the vault binary
-```
-curl -fsSL https://apt.releases.hashicorp.com/gpg | \
-  sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+sudo apt install -y docker.io; sudo systemctl enable docker;
 ```
 
-### Add Hashicorp into the ubuntu source list
+### Creating vault directory for permanent saving of data
 ```
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-  https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
-  sudo tee /etc/apt/sources.list.d/hashicorp.list
+mkdir -p /opt/vault-prod/config /opt/vault-prod/data /opt/vault-prod/logs
 ```
 
-### Update the source and start the vault install
+### Change data directory ownership for docker
 ```
-sudo apt update;
-sudo apt install vault;
-```
-
-### prepare the vault folder
-```
-sudo mkdir -p /etc/vault.d /opt/vault/data /opt/vault/logs;
-sudo chown -R vault:vault /opt/vault;
+sudo chown -R 100:100 /opt/vault-prod/data
 ```
 
-### Generate self sign certificate for ip based installation
+### Create dierctory to hold SSL certificate
 ```
-openssl req -x509 -nodes -days 365 \
-  -newkey rsa:2048 \
-  -keyout /etc/vault.d/vault.key \
-  -out /etc/vault.d/vault.crt \
-  -subj "/CN=<<WRITE_YOUR_IP_ADDRESS_HERE>>";
-
-sudo chown vault:vault /etc/vault.d/vault.*;
+mkdir -p /opt/vault-prod/config/certs
 ```
 
-### Generate LetsEncrypt based SSL certificate for domain based installation
+### Command to generate self-sign SSL certificate
 ```
-sudo apt install certbot;
-sudo certbot certonly --standalone -d <<WRITE_YOUR_FQDN_HERE>>;
-```
-
-### Copy LetsEncrypt SSL Certificate to Vault folder
-```
-sudo cp /etc/letsencrypt/live/<<WRITE_YOUR_FQDN_HERE>>/fullchain.pem /etc/vault.d/vault.crt;
-sudo cp /etc/letsencrypt/live/<<WRITE_YOUR_FQDN_HERE>>/privkey.pem /etc/vault.d/vault.key;
-sudo chown vault:vault /etc/vault.d/vault.*;
+openssl req -x509 -nodes -newkey rsa:2048 \
+  -keyout /opt/vault-prod/config/certs/vault.key \
+  -out /opt/vault-prod/config/certs/vault.crt \
+  -days 365 \
+  -config vault.cnf
 ```
 
-### Install Hashicorp Vault service in Systemd
+### Start vault container
 
 ```
-sudo systemctl daemon-reexec;
-sudo systemctl enable vault;
-sudo systemctl start vault;
+docker run -d --name vault \
+  --cap-add=IPC_LOCK \
+  -p 8200:8200 \
+  -p 8201:8201 \
+  -v /opt/vault-prod/config:/vault/config \
+  -v /opt/vault-prod/data:/vault/data \
+  -v /opt/vault-prod/config/certs:/vault/config/certs \
+  -e VAULT_ADDR='https://0.0.0.0:8200' \
+  --restart=always \
+  hashicorp/vault:latest server
 ```
 
-## Post Vault Install
-
-### Export env vars
+### Initialize Hashicorp vault
 ```
-export VAULT_ADDR=https://<<YOUR_IP_OR_FQDN_HERE>>:8200;
-export VAULT_CACERT=/etc/vault.d/vault.crt
+docker exec -it vault vault operator init
 ```
 
-### Initialize Vault
+### Unseal the vault
 ```
-vault operator init -key-shares=5 -key-threshold=3 > ~/vault.init
-```
-
-### Unseal vault
-```
-vault operator unseal <key1>
-vault operator unseal <key2>
-vault operator unseal <key3>
+docker exec -it vault vault operator unseal <unseal-key>
 ```
